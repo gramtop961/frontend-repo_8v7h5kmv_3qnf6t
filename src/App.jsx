@@ -1,28 +1,55 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react';
+import Sidebar from './components/Sidebar';
+import ChatHeader from './components/ChatHeader';
+import MessageList from './components/MessageList';
+import MessageInput from './components/MessageInput';
 
-function App() {
-  const [count, setCount] = useState(0)
+const seedMessages = {
+  general: [
+    { id: 'm1', user: 'Alex Johnson', text: 'Welcome to the general channel! 🎉', timestamp: Date.now() - 1000 * 60 * 60 },
+    { id: 'm2', user: 'Sam Lee', text: 'Feel free to share updates and plan together here.', timestamp: Date.now() - 1000 * 60 * 45 },
+    { id: 'm3', user: 'Taylor Kim', text: 'Launching the new feature this week. Any blockers?', timestamp: Date.now() - 1000 * 60 * 12 },
+  ],
+  announcements: [
+    { id: 'm4', user: 'System', text: 'Town hall at 3 PM. Check your calendars!', timestamp: Date.now() - 1000 * 60 * 20 },
+  ],
+  random: [
+    { id: 'm5', user: 'Alex Johnson', text: 'Drop your best memes here 😄', timestamp: Date.now() - 1000 * 60 * 5 },
+  ],
+  'u-alex': [
+    { id: 'm6', user: 'Alex Johnson', text: 'Hey! Let’s sync later today?', timestamp: Date.now() - 1000 * 60 * 55 },
+  ],
+};
+
+export default function App() {
+  const [current, setCurrent] = useState({ id: 'general', name: 'general', type: 'channel' });
+  const [messagesByThread, setMessagesByThread] = useState(seedMessages);
+
+  const messages = useMemo(() => messagesByThread[current.id] || [], [messagesByThread, current.id]);
+
+  const handleSelect = (ctx) => {
+    setCurrent(ctx);
+  };
+
+  const handleSend = (text) => {
+    setMessagesByThread((prev) => {
+      const next = { ...prev };
+      const list = next[current.id] ? [...next[current.id]] : [];
+      list.push({ id: `${current.id}-${Date.now()}`, user: 'You', text, timestamp: Date.now() });
+      next[current.id] = list;
+      return next;
+    });
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center">
-      <div className="bg-white p-8 rounded-lg shadow-lg">
-        <h1 className="text-3xl font-bold text-gray-800 mb-4">
-          Vibe Coding Platform
-        </h1>
-        <p className="text-gray-600 mb-6">
-          Your AI-powered development environment
-        </p>
-        <div className="text-center">
-          <button
-            onClick={() => setCount(count + 1)}
-            className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded"
-          >
-            Count is {count}
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
+    <div className="h-screen w-screen bg-zinc-950 text-zinc-50 flex">
+      <Sidebar selected={current} onSelect={handleSelect} />
 
-export default App
+      <main className="flex-1 flex flex-col min-w-0">
+        <ChatHeader context={current} />
+        <MessageList messages={messages} />
+        <MessageInput onSend={handleSend} />
+      </main>
+    </div>
+  );
+}
